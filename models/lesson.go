@@ -2,15 +2,13 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Lesson struct {
-	Id        uuid.UUID
-	Title     string
-	CreatedAt time.Time
-	Questions Questions
+	Id        int64     `json:"id"`
+	Title     string    `json:"title"`
+	CreatedAt time.Time `json:"created_at"`
+	Questions Questions `json:"questions"`
 }
 
 type Lessons []*Lesson

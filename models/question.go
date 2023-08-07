@@ -2,16 +2,14 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Question struct {
-	Id        uuid.UUID
-	LessonId  uuid.UUID
-	Text      string
-	CreatedAt time.Time
-	Options   Options
+	Id        int64     `json:"id"`
+	LessonId  int64     `json:"lesson_id"`
+	Text      string    `json:"text"`
+	CreatedAt time.Time `json:"created_at"`
+	Options   Options   `json:"options"`
 }
 
 type Questions []*Question

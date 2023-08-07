@@ -1,7 +1,8 @@
-package main
+package infrastructure
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,7 +12,7 @@ import (
 
 const secret = "SuperSecretKey"
 
-func hashpw(password string) (string, error) {
+func HashPw(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -20,16 +21,16 @@ func hashpw(password string) (string, error) {
 	return string(hashed), nil
 }
 
-func genjwt(user *models.User) (string, error) {
+func GenJwt(user *models.User) (string, error) {
 	claims := &jwt.RegisteredClaims{
-		Subject:   user.Id.String(),
+		Subject:   strconv.Itoa(int(user.Id)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString(secret)
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
@@ -37,9 +38,9 @@ func genjwt(user *models.User) (string, error) {
 	return tokenString, nil
 }
 
-func validatejwt(tokenString string) error {
+func ValidateJwt(tokenString string) error {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-		return secret, nil
+		return []byte(secret), nil
 	})
 
 	if err != nil {

@@ -1,28 +1,37 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
+	"github.com/go-chi/render"
+	"github.com/jmhammock/wand-go/models"
 	"github.com/jmhammock/wand-go/repositories"
 )
 
-type AdminResource struct {
+type adminLessonResource struct {
 	repo repositories.ILessonRepo
 }
 
-func (ar *AdminResource) Routes() chi.Router {
+func NewAdminLessonResource(repo repositories.ILessonRepo) *adminLessonResource {
+	return &adminLessonResource{
+		repo: repo,
+	}
+}
+
+func (ar *adminLessonResource) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/", ar.list)
-	r.Get("/{id}", ar.get)
+	r.Route("/lessons", func(r chi.Router) {
+		r.Get("/", ar.list)
+		r.Get("/{id}", ar.get)
+	})
 
 	return r
 }
 
-func (ar *AdminResource) list(w http.ResponseWriter, r *http.Request) {
+func (ar *adminLessonResource) list(w http.ResponseWriter, r *http.Request) {
 	lessons, err := ar.repo.List()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -30,27 +39,19 @@ func (ar *AdminResource) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(lessons)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Write(b)
+	render.RenderList(w, r, newLessonListResponse(*lessons))
 }
 
-func (ar *AdminResource) get(w http.ResponseWriter, r *http.Request) {
-	param := r.URL.Query().Get("id")
+func (ar *adminLessonResource) get(w http.ResponseWriter, r *http.Request) {
+	param := chi.URLParam(r, "id")
 	if param == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	id, err := uuid.Parse(param)
+	id, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -61,11 +62,27 @@ func (ar *AdminResource) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(lesson)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-	}
+	render.Render(w, r, newLessonResponse(lesson))
+}
 
-	w.Write(b)
+type lessonResponse struct {
+	*models.Lesson
+}
+
+func newLessonResponse(lesson *models.Lesson) *lessonResponse {
+	return &lessonResponse{
+		Lesson: lesson,
+	}
+}
+
+func newLessonListResponse(lessons models.Lessons) []render.Renderer {
+	list := []render.Renderer{}
+	for _, lesson := range lessons {
+		list = append(list, newLessonResponse(lesson))
+	}
+	return list
+}
+
+func (lr *lessonResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
 }

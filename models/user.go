@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type User struct {
-	Id        uuid.UUID
+	Id        int64
 	FirstName string
 	LastName  string
 	Email     string
